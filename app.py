@@ -1,86 +1,89 @@
 import streamlit as st
 import pandas as pd
-import pydeck as pdk
 import os
+import subprocess
 
-st.set_page_config(page_title="Ookla Johor Dashboard", layout="wide")
+DATA_FILE = "data/ookla_johor.parquet"
 
-DATA_PATH = "data/ookla_johor.parquet"
+st.set_page_config(layout="wide", page_title="Johor Ookla Explorer")
 
-# ------------------------------------------------------------------
-# Load dataset
-# ------------------------------------------------------------------
-@st.cache_data
-def load_data():
-    if not os.path.exists(DATA_PATH):
-        st.error("Dataset missing. Please run load_ookla.py first.")
-        st.stop()
-    return pd.read_parquet(DATA_PATH)
+# ------------------------------------------------------------
+# LOAD DATA OR AUTO-RUN LOADER
+# ------------------------------------------------------------
 
-st.title("📡 Johor Internet Performance – Ookla Open Data")
+def ensure_data():
+    """Ensures parquet file exists. If missing, run loader."""
+    if not os.path.exists(DATA_FILE):
+        st.warning("Dataset missing. Running loader...")
 
-# Load data
-df = load_data()
+        try:
+            result = subprocess.run(
+                ["python", "load_ookla.py"],
+                capture_output=True,
+                text=True
+            )
 
-# Expected columns from Ookla tile data
-# avg_d_kbps, avg_u_kbps, avg_lat_ms, tile_x, tile_y, tile_z, quadkey, provider
-if 'avg_d_kbps' not in df.columns:
-    st.error("Parquet file does not match Ookla schema. Check loader.")
+            if result.returncode != 0:
+                st.error("Loader failed:\n" + result.stderr)
+                return None
+
+        except Exception as e:
+            st.error(f"Error running loader: {e}")
+            return None
+
+    try:
+        df = pd.read_parquet(DATA_FILE)
+        return df
+    except Exception as e:
+        st.error(f"Failed to load data: {e}")
+        return None
+
+
+df = ensure_data()
+if df is None:
     st.stop()
 
-# ------------------------------------------------------------------
-# Sidebar filters
-# ------------------------------------------------------------------
-st.sidebar.header("Filters")
+# ------------------------------------------------------------
+# APPLICATION UI
+# ------------------------------------------------------------
 
-provider_list = ["All"] + sorted(df["provider"].dropna().unique().tolist())
-provider = st.sidebar.selectbox("Provider", provider_list)
+st.title("📡 Ookla Johor Explorer (5km Radius Averages)")
 
-if provider != "All":
-    df = df[df["provider"] == provider]
+st.write(f"Loaded **{len(df):,}** data points from Ookla Open Data.")
 
-# ------------------------------------------------------------------
-# Map settings
-# ------------------------------------------------------------------
-st.subheader("📍 Coverage Map")
+lat = st.number_input("Latitude", value=1.4927)
+lon = st.number_input("Longitude", value=103.7414)
+radius_km = st.slider("Radius (km)", 1, 20, 5)
 
-df = df.rename(columns={"avg_d_kbps": "download", "avg_u_kbps": "upload"})
+# Haversine
+from math import radians, sin, cos, asin, sqrt
+def haversine(lon1, lat1, lon2, lat2):
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1)*cos(lat2)*sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371
+    return c * r
 
-# Convert speed to Mbps
-df["download_mbps"] = df["download"] / 1000
-df["upload_mbps"] = df["upload"] / 1000
+# Compute distances
+df["dist_km"] = df.apply(lambda r: haversine(lon, lat, r["lon"], r["lat"]), axis=1)
+selected = df[df["dist_km"] <= radius_km]
 
-# pydeck layer
-layer = pdk.Layer(
-    "ScatterplotLayer",
-    df,
-    pickable=True,
-    opacity=0.6,
-    get_position=["lon", "lat"],
-    get_radius=300,
-    get_fill_color="[255 - download_mbps * 5, download_mbps * 5, 100]",
-)
+st.subheader(f"📍 Average Speed Within {radius_km} km")
 
-view_state = pdk.ViewState(
-    latitude=1.48,
-    longitude=103.76,
-    zoom=9,
-)
+if selected.empty:
+    st.warning("No samples inside radius.")
+    st.stop()
 
-st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
+summary = selected.groupby("provider").agg(
+    count=("download", "count"),
+    avg_download=("download", "mean"),
+    avg_upload=("upload", "mean"),
+    avg_latency=("latency", "mean")
+).reset_index()
 
-# ------------------------------------------------------------------
-# Stats
-# ------------------------------------------------------------------
-st.subheader("📊 Statistics")
+st.dataframe(summary)
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Avg Download (Mbps)", f"{df['download_mbps'].mean():.2f}")
-col2.metric("Avg Upload (Mbps)", f"{df['upload_mbps'].mean():.2f}")
-col3.metric("Avg Latency (ms)", f"{df['avg_lat_ms'].mean():.2f}")
-
-# ------------------------------------------------------------------
-# Raw data
-# ------------------------------------------------------------------
-st.subheader("📄 Raw Data")
-st.dataframe(df.head(500))
+st.write("---")
+st.caption("Built using Ookla Open Data | Streamlit Cloud Ready")
