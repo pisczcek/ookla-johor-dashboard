@@ -19,7 +19,12 @@ from streamlit_folium import st_folium
 from shapely.ops import unary_union
 import time
 from math import radians, cos, sin, asin, sqrt
+import os
+import subprocess
 
+if not os.path.exists("data/ookla_johor.geojson"):
+    st.warning("Data not found. Running loader...")
+    subprocess.run(["python", "load_ookla.py"])
 st.set_page_config(layout='wide', page_title='Ookla Johor Explorer')
 
 JOHOR_CENTER = [1.4927, 103.7414]  # approx Johor Bahru
