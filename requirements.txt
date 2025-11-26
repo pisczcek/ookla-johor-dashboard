@@ -1,7 +1,4 @@
-pandas
-geopandas
-requests
 streamlit
-pyproj
-shapely
-fiona
+pandas
+pyarrow
+requests
