@@ -5,6 +5,8 @@ import folium
 from streamlit_folium import st_folium
 import os
 import subprocess
+import json
+from shapely.geometry import shape
 
 st.set_page_config(layout="wide")
 
@@ -20,7 +22,22 @@ if not os.path.exists("johor.geojson"):
     except Exception as e:
         st.error(f"Failed to run loader: {e}")
 
-gdf = gpd.read_file("johor.geojson")
+
+def load_geojson(path):
+    with open(path) as f:
+        data = json.load(f)
+
+    rows = []
+    for feat in data["features"]:
+        geom = shape(feat["geometry"])
+        props = feat["properties"]
+        props["geometry"] = geom
+        rows.append(props)
+
+    return pd.DataFrame(rows)
+
+df = load_geojson("data/ookla_johor.geojson")
+
 
 # ---------------------------
 # Map UI
