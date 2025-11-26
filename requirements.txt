@@ -5,3 +5,6 @@ pyproj
 shapely
 requests
 fiona
+folium
+streamlit-folium
+branca
