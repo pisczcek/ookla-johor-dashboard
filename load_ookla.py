@@ -1,69 +1,42 @@
-import sys
-
-try:
-    import requests
-except ImportError:
-    raise ImportError(
-        "❗ Missing dependency: 'requests'\n"
-        "➡ Add this line to requirements.txt:\n"
-        "requests"
-    )
-
-import zipfile
 import os
 import pandas as pd
-import geopandas as gpd
+import requests
 
-OOKLA_URL = "https://ookla-open-data.s3.amazonaws.com/parquet/performance/type=fixed/year=2024/quarter=4/2024-10-01_performance_fixed_tiles.parquet"
+os.makedirs("data", exist_ok=True)
+OUTPUT_FILE = "data/ookla_johor.parquet"
 
-OUTPUT_DIR = "data"
-OUTPUT_FILE = f"{OUTPUT_DIR}/ookla_johor.geojson"
+OOKLA_URL = "https://ookla-open-data.s3.amazonaws.com/parquet/performance/type=fixed/year=2024/quarter=3/fixed_2024_q3_malaysia.parquet"
 
-# Example: filter only Johor tiles (lat/lon bounding box)
+# Johor bounding box
 JOHOR_BOUNDS = {
-    "min_lon": 103.0,
-    "max_lon": 104.5,
-    "min_lat": 1.2,
+    "min_lon": 103.3,
+    "max_lon": 104.3,
+    "min_lat": 1.15,
     "max_lat": 2.7,
 }
 
-def download_parquet(url, filename="ookla.parquet"):
-    print("📥 Downloading Ookla data…")
-    r = requests.get(url)
-    if r.status_code != 200:
-        raise Exception(f"Failed download: HTTP {r.status_code}")
+def download():
+    print("Downloading Ookla Malaysia parquet…")
+    r = requests.get(OOKLA_URL, stream=True)
+    r.raise_for_status()
+    local_file = "data/malaysia.parquet"
+    with open(local_file, "wb") as f:
+        for chunk in r.iter_content(4096):
+            f.write(chunk)
+    return local_file
 
-    with open(filename, "wb") as f:
-        f.write(r.content)
-    return filename
-
-
-def filter_johor(parquet_path):
-    print("📌 Filtering for Johor…")
-    df = gpd.read_parquet(parquet_path)
-
+def process(path):
+    print("Filtering Johor…")
+    df = pd.read_parquet(path)
     df = df[
-        (df["tile_lon"] >= JOHOR_BOUNDS["min_lon"]) &
-        (df["tile_lon"] <= JOHOR_BOUNDS["max_lon"]) &
-        (df["tile_lat"] >= JOHOR_BOUNDS["min_lat"]) &
-        (df["tile_lat"] <= JOHOR_BOUNDS["max_lat"])
+        (df['tile_lat'] >= JOHOR_BOUNDS['min_lat']) &
+        (df['tile_lat'] <= JOHOR_BOUNDS['max_lat']) &
+        (df['tile_lon'] >= JOHOR_BOUNDS['min_lon']) &
+        (df['tile_lon'] <= JOHOR_BOUNDS['max_lon'])
     ]
-
-    return df
-
-
-def save_geojson(gdf):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    gdf.to_file(OUTPUT_FILE, driver="GeoJSON")
-    print(f"✅ Saved: {OUTPUT_FILE}")
-
+    df.to_parquet(OUTPUT_FILE, index=False)
+    print("Saved:", OUTPUT_FILE)
 
 if __name__ == "__main__":
-    try:
-        parquet_file = download_parquet(OOKLA_URL)
-        gdf = filter_johor(parquet_file)
-        save_geojson(gdf)
-        print("🎉 Loader completed successfully!")
-    except Exception as e:
-        print(f"❌ Loader failed: {e}")
-        sys.exit(1)
+    p = download()
+    process(p)
