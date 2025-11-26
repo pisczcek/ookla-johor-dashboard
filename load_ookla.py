@@ -1,5 +1,11 @@
 import os
-import requests
+
+# Try importing requests
+try:
+    import requests
+except ImportError:
+    raise ImportError("❗ 'requests' is missing. Add it to requirements.txt:  requests")
+
 import pandas as pd
 import math
 
@@ -32,18 +38,19 @@ def download_ookla_parquet():
     if os.path.exists(local_file):
         return local_file
 
-    print("Downloading Ookla Malaysia parquet...")
+    print("Downloading Ookla Malaysia parquet…")
     r = requests.get(OOKLA_URL, stream=True)
+    r.raise_for_status()
+
     with open(local_file, "wb") as f:
         for chunk in r.iter_content(4096):
             f.write(chunk)
 
-    print("Download completed.")
     return local_file
 
 
 def process_johor(path):
-    print("Processing Malaysia parquet...")
+    print("Processing Malaysia parquet…")
     df = pd.read_parquet(path)
 
     df["lon"] = df.apply(lambda r: tile_x_to_lon(r["tile_x"], r["tile_z"]), axis=1)
@@ -68,7 +75,7 @@ def process_johor(path):
 
 
 if __name__ == "__main__":
-    parquet = download_ookla_parquet()
-    df = process_johor(parquet)
+    parquet_file = download_ookla_parquet()
+    df = process_johor(parquet_file)
     df.to_parquet(OUTPUT_FILE, index=False)
     print("Saved:", OUTPUT_FILE)
