@@ -1,49 +1,70 @@
-import requests
-import geopandas as gpd
 import pandas as pd
-import zipfile
-import io
-import datetime
-from shapely.geometry import box
+import pyarrow.parquet as pq
+import requests
+import os
+import json
+from shapely.geometry import Point, mapping
 
-OOKLA_URL = "https://github.com/teamookla/ookla-open-data/raw/master/mobile/"
+OOKLA_URL = "https://ookla-open-data.s3.amazonaws.com/parquet/performance/type=fixed/year=2024/quarter=4/"
 
-def find_latest_quarter():
-    now = datetime.datetime.utcnow()
-    q = (now.month - 1) // 3 + 1
-    return f"{now.year}_Q{q}"
+def download_parquet():
+    files = [
+        "2024-04-01_performance_fixed_tiles.parquet",
+        "tiles.parquet"
+    ]
+    for name in files:
+        url = OOKLA_URL + name
+        out = f"data/{name}"
+        try:
+            r = requests.get(url, timeout=10)
+            if r.status_code == 200:
+                open(out, "wb").write(r.content)
+                return out
+        except:
+            continue
+    return None
 
-def download_latest_parquet():
-    quarter = find_latest_quarter()
-    filename = f"{quarter}_mobile_tiles.parquet"
-    url = f"{OOKLA_URL}{filename}"
+def convert_to_geojson(parquet_file):
+    table = pq.read_table(parquet_file)
+    df = table.to_pandas()
 
-    print(f"Downloading {url}...")
-    r = requests.get(url)
+    df["lon"] = df["tile_x"]
+    df["lat"] = df["tile_y"]
 
-    if r.status_code != 200:
-        raise RuntimeError(f"Failed to download {url}")
+    features = []
+    for _, row in df.iterrows():
+        geom = Point(row["lon"], row["lat"])
+        feat = {
+            "type": "Feature",
+            "geometry": mapping(geom),
+            "properties": {
+                "download_mean": row.get("avg_d_kbps", None),
+                "upload_mean": row.get("avg_u_kbps", None),
+                "latency_mean": row.get("avg_lat_ms", None),
+                "provider": row.get("provider_name", "Unknown")
+            }
+        }
+        features.append(feat)
 
-    open("latest.parquet", "wb").write(r.content)
-    print("Downloaded latest.parquet")
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features
+    }
 
-def filter_johor():
-    print("Loading parquet...")
-    df = pd.read_parquet("latest.parquet")
+    os.makedirs("data", exist_ok=True)
+    with open("data/ookla_johor.geojson", "w") as f:
+        json.dump(geojson, f)
 
-    print("Converting geometry...")
-    gdf = gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkt(df["tile"]))
+def main():
+    print("Downloading Ookla parquet...")
+    parquet = download_parquet()
+    if parquet is None:
+        print("Failed to download any parquet file.")
+        return
 
-    johor_bbox = box(
-        103.28, 1.2,   # min lon, min lat
-        104.6, 2.7     # max lon, max lat
-    )
-
-    print("Filtering Johor...")
-    gdf = gdf[gdf.intersects(johor_bbox)]
-    gdf.to_file("johor.geojson", driver="GeoJSON")
-    print("Saved johor.geojson")
+    print("Converting to GeoJSON...")
+    convert_to_geojson(parquet)
+    print("DONE – GeoJSON created.")
 
 if __name__ == "__main__":
-    download_latest_parquet()
-    filter_johor()
+    main()
