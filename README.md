@@ -1,25 +1,19 @@
-# Ookla Johor Streamlit Dashboard
+# Johor Internet Performance Map (Ookla Open Data)
 
-Interactive Streamlit app to load Ookla Open Data, focus on Johor (Malaysia), allow users to search a location or draw a polygon and compute 5km-radius averages (and polygon averages) per telco.
+This Streamlit app downloads the latest Ookla Open Data directly from:
+https://github.com/teamookla/ookla-open-data
 
-## Quickstart (local)
-1. Create a virtualenv and activate it.
-2. `pip install -r requirements.txt`
-3. Run the data loader once (downloads latest quarter and writes `data/ookla_johor.geojson`):
-   ```
-   python load_ookla.py --output data/ookla_johor.gpkg
-   ```
-4. Run the Streamlit app:
-   ```
-   streamlit run app.py
-   ```
+### Features
+- Search any location in Johor
+- Draw circle radius (5km) or polygon on the map
+- Calculate average download/upload/latency for all telcos
+- Fully automatic data download (no preloaded files)
 
-## What it does
-- Downloads latest Ookla mobile parquet files from the public AWS Open Data bucket (anonymous access).
-- Filters points to Johor bounding box.
-- Saves a GeoPackage and a GeoJSON used by the app.
-- Streamlit app lets users search locations, click on map, draw polygons; computes per-operator averages within 5km radius or polygon.
+### License Attribution
 
-## Notes
-- Nominatim geocoding is used for search (rate limits). For production, consider caching or a commercial geocoder.
-- For very large datasets, switch to PostGIS and pre-aggregations.
+This application uses data from Ookla Open Data, available at 
+https://github.com/teamookla/ookla-open-data, licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+© Ookla, LLC. All rights reserved.
+
+### Running Locally
