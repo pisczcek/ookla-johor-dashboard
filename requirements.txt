@@ -1,7 +1,4 @@
 streamlit
 pandas
 pyarrow
-shapely
-folium
-streamlit-folium
 requests
