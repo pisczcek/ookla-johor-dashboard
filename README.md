@@ -17,3 +17,8 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 © Ookla, LLC. All rights reserved.
 
 ### Running Locally
+
+This application uses data from Ookla Open Data, available at 
+https://github.com/teamookla/ookla-open-data, licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+© Ookla, LLC. All rights reserved.
