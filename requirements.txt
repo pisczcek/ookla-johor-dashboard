@@ -1,10 +1,7 @@
 streamlit
 pandas
-geopandas
-pyproj
+pyarrow
 shapely
-requests
-fiona
 folium
 streamlit-folium
-branca
+requests
