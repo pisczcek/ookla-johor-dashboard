@@ -1,0 +1,14 @@
+streamlit==1.30.0
+pandas
+pyarrow
+s3fs
+geopandas
+shapely
+geopy
+streamlit_folium
+folium
+rtree
+pyproj
+numpy
+scikit-learn
+tqdm

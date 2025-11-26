@@ -1,0 +1,25 @@
+name: Update Ookla Data
+on:
+  schedule:
+    - cron: '0 0 * * 1' # weekly on Monday UTC
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run loader
+        run: python load_ookla.py --output data/ookla_johor.gpkg
+      - name: Commit data
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add data/ookla_johor.gpkg data/ookla_johor.geojson || true
+          git commit -m "Update Ookla Johor data" || echo "no changes"
+          git push || echo "push failed"
