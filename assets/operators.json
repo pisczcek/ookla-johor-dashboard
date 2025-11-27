@@ -1,0 +1,22 @@
+{
+  "CelcomDigi": {
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/3/3b/CelcomDigi_logo.png",
+    "color": "#0033A0"
+  },
+  "Maxis": {
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/7/76/Maxis_logo.png",
+    "color": "#FF0000"
+  },
+  "U Mobile": {
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/0/06/U_Mobile_logo.png",
+    "color": "#00A859"
+  },
+  "Yes": {
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/6/64/Yes_logo.png",
+    "color": "#7B3F00"
+  },
+  "TM": {
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Telekom_Malaysia_logo.png",
+    "color": "#0070C0"
+  }
+}

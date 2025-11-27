@@ -1,0 +1,8 @@
+streamlit
+pandas
+pyarrow
+requests
+shapely
+folium
+streamlit-folium
+altair
