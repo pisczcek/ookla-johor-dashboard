@@ -10,10 +10,6 @@ import altair as alt
 import datetime
 import os
 
-with st.spinner("Streaming ZIP and extracting Johor tiles..."):
-    df = download_extract_johor_shapefile(url)
-st.success(f"Loaded {len(df)} Johor tiles" if df is not None else "Failed to load tiles")
-
 st.set_page_config(layout="wide", page_title="Ookla Johor Explorer")
 
 # ---------------------
