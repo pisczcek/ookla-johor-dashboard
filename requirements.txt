@@ -1,8 +1,11 @@
-pandas
 streamlit
-pyarrow
-requests
+pandas
+geopandas
+fiona
+pyproj
 shapely
+rtree
+requests
 folium
 streamlit-folium
 altair
