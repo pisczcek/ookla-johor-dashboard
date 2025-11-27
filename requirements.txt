@@ -9,4 +9,3 @@ requests
 folium
 streamlit-folium
 altair
-os
