@@ -1,24 +1,21 @@
-# Ookla Johor Explorer (Upgraded)
+# Ookla Johor Explorer
 
-This repository contains a Streamlit app that downloads Ookla Open Data and provides:
-- 5km radius averages per operator
-- Polygon draw aggregation (folium draw)
-- Operator logos/colors + charts
-- Streamlit Cloud compatible (minimal heavy native libs)
+A Streamlit dashboard to explore Ookla mobile performance tiles for **Johor**.
 
-## Files
-- `app.py` — main Streamlit app
-- `load_ookla.py` — downloads Ookla Malaysia parquet, filters Johor, saves parquet
-- `requirements.txt` — Python dependencies
-- `.streamlit/config.toml` — UI config
-- `assets/operators.json` — operator metadata (logos/colors)
+## Features
 
-## Run locally
-```bash
-pip install -r requirements.txt
-python load_ookla.py
-streamlit run app.py
-```
+- Stream Ookla Shapefiles directly from S3 (no preloaded files)
+- Filter by **Year + Quarter**
+- **Radius** or **Polygon** analysis
+- Operator logos and color-coded charts
+- Fully compatible with Streamlit Cloud
+
+## Deployment
+
+1. Push this repository to GitHub.
+2. Go to [Streamlit Cloud](https://streamlit.io/cloud), connect your GitHub repo.
+3. Deploy.
+4. Select **Year + Quarter**, click **Stream & Load Johor Tiles** to load data.
 
 ## License & Attribution
 Data: Ookla Open Data — https://github.com/teamookla/ookla-open-data  
