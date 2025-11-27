@@ -9,8 +9,13 @@ from streamlit_folium import st_folium
 import altair as alt
 import datetime
 import os
+from auth import check_login
 
 st.set_page_config(layout="wide", page_title="Ookla Johor Explorer")
+
+# LOGIN
+if not check_login():
+    st.stop()
 
 # Optional simple auth via Streamlit secrets (not committed)
 def check_auth():
