@@ -10,33 +10,9 @@ import altair as alt
 import datetime
 import os
 
-progress_bar = st.progress(0)
-status_text = st.empty()
-
-# Step 1: Download
-status_text.text("Downloading ZIP...")
-r = requests.get(url, stream=True)
-progress_bar.progress(20)
-
-# Step 2: Load into memory
-zip_bytes = io.BytesIO(r.content)
-progress_bar.progress(50)
-
-# Step 3: Extract files
-status_text.text("Extracting Shapefile...")
-with zipfile.ZipFile(zip_bytes) as z:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        z.extractall(tmpdir)
-        progress_bar.progress(80)
-
-        shp_files = [f for f in os.listdir(tmpdir) if f.endswith(".shp")]
-        gdf = gpd.read_file(os.path.join(tmpdir, shp_files[0]))
-        gdf_johor = gdf[gdf.geometry.intersects(JOHOR_POLY)]
-        gdf_johor["lon"] = gdf_johor.geometry.centroid.x
-        gdf_johor["lat"] = gdf_johor.geometry.centroid.y
-        progress_bar.progress(100)
-        status_text.text("Done!")
-
+with st.spinner("Streaming ZIP and extracting Johor tiles..."):
+    df = download_extract_johor_shapefile(url)
+st.success(f"Loaded {len(df)} Johor tiles" if df is not None else "Failed to load tiles")
 
 st.set_page_config(layout="wide", page_title="Ookla Johor Explorer")
 
